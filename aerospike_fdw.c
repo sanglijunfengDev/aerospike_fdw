@@ -75,7 +75,7 @@ int as_server_port;
 #define RIAttName(rel, attnum)	NameStr(*attnumAttName(rel, attnum))
 compile_result *g_compile_result;
 
-#define BUFFSIZE    256
+//not use#define BUFFSIZE    256
 PG_FUNCTION_INFO_V1(aerospike_fdw_handler);
 PG_FUNCTION_INFO_V1(aerospike_fdw_validator);
 
