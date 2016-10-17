@@ -1,0 +1,46 @@
+Foreign Data Wrapper for AEROSPIKE_FDW
+======================================
+
+1. Installation
+install aerospike server&client
+
+https://github.com/aerospike/aerospike-server.git
+https://github.com/aerospike/aerospike-client-c.git
+
+aql> insert into test.demo(PK,a,b,c) values('key1',1,2,3);
+OK, 1 record affected.
+
+aql> select * from test.demo
++-----+-------+---+
+| a   | b     | c |
++-----+-------+---+
+| 1   | 2     | 3 |
++-----+-------+---+
+1 rows in set (0.027 secs)
+
+$ export PATH=/usr/local/pgsql/bin/:$PATH
+
+make
+
+make install
+
+2.Usage
+
+create extension aerospike_fdw;
+create server as_server foreign data wrapper aerospike_fdw ;
+
+create foreign table test_as(
+a     bigint,
+b     bigint,
+c     bigint
+)
+server as_server
+options(namespace 'test',set 'demo',key 'key1');
+
+3.User conf parameter
+default IP value is 127.0.0.1
+aerospike.as_server_ip = 'aerospike server ip'
+
+default PORT is 3000
+aerospike.as_server_port= aerospike server port
+shared_preload_libraries='/usr/local/psql/lib/postgresql/aerospike_fdw'

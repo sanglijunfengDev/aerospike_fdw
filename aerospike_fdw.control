@@ -1,0 +1,5 @@
+# imcs extension
+comment = 'aerospike_fdw'
+default_version = '1.0'
+module_pathname = '$libdir/aerospike_fdw'
+relocatable = true
