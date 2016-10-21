@@ -117,7 +117,7 @@ void Connect_to_aerospike_with_udf_configtmp(aerospike* p_as, char *as_server_ip
         as_error err;
         as_config_init(&cfg);
         as_config_add_host(&cfg, as_server_ip, as_server_port);
-	as_config_host *host;
+	//as_config_host *host;
 
     int rc = access(cfg.lua.system_path, R_OK);
     if (rc != 0)
@@ -142,8 +142,8 @@ void Connect_to_aerospike_with_udf_configtmp(aerospike* p_as, char *as_server_ip
 	host->port = as_server_port;
 	*/
         aerospike_init(p_as, &cfg);
-	p_as->config.hosts[0].addr = as_server_ip;
-	p_as->config.hosts[0].port = as_server_port;
+	//p_as->config.hosts[0].addr = as_server_ip;
+	//p_as->config.hosts[0].port = as_server_port;
 
         if (aerospike_connect(p_as, &err) != AEROSPIKE_OK)
         {
@@ -903,12 +903,19 @@ static void AsGetForeignPaths(PlannerInfo *root, RelOptInfo *baserel, Oid foreig
     //double totalCost = startupCost + executionCost;
 
     /* create a foreign path node and add it as the only possible path */
-    foreignScanPath = (Path *) create_foreignscan_path(root, baserel, baserel->rows, startupCost,
-                    startupCost,
-                    NIL, /* no known ordering */
-                    NULL, /* not parameterized */
-		    NULL,
-                    NIL); /* no fdw_private */
+    #if PG_VERSION_NUM >= 90500
+    foreignScanPath = (Path *) create_foreignscan_path(root, baserel, baserel->rows,startupCost, startupCost, 
+                                                       NIL,  /* no known ordering */
+                                                       NULL, /* not parameterized */
+                                                       NULL, /* no outer path */
+                                                       NIL); /* no fdw_private */
+    #else
+    foreignScanPath = (Path *) create_foreignscan_path(root, baserel, baserel->rows,
+                                                       startupCost, startupCost,
+                                                       NIL,  /* no known ordering */
+                                                       NULL, /* not parameterized */
+                                                       NIL); /* no fdw_private */
+    #endif
 
     add_path(baserel, foreignScanPath);
 
@@ -948,15 +955,20 @@ static ForeignScan * AsGetForeignPlan(PlannerInfo *root, RelOptInfo *baserel, Oi
 
 	foreignPrivateList = list_make1(columnList);
 
+	
 	/* create the foreign scan node */
-	foreignScan = make_foreignscan(targetList,
-			scanClauses,
-			baserel->relid,
-			NIL, /* no expressions to evaluate */
-			foreignPrivateList,
-			NIL,
-			NIL,
-			outer_plan);
+#if PG_VERSION_NUM >= 90500
+	foreignScan = make_foreignscan(targetList, scanClauses, baserel->relid,
+								   NIL, /* no expressions to evaluate */
+								   foreignPrivateList,
+								   NIL,
+								   NIL,
+								   NULL); /* no outer path */
+#else
+	foreignScan = make_foreignscan(targetList, scanClauses, baserel->relid,
+								   NIL, /* no expressions to evaluate */
+								   foreignPrivateList);
+#endif
 
     return foreignScan;
 }
