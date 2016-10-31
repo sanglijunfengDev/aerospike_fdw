@@ -9,7 +9,7 @@ DATA= aerospike_fdw--1.0.sql
 
 LDFLAGS =-O0 -g  -lssl -lcrypto -lpthread -laerospike
 
-CUSTOM_COPT =-O0 -g  -laerospike  -lcrypto -lpthread -I/usr/include 
+CUSTOM_COPT =-O0 -g -lssl  -laerospike  -lcrypto -lpthread -I/usr/include 
 
 PG_CONFIG= pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
