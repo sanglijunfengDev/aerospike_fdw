@@ -1,7 +1,7 @@
 Foreign Data Wrapper for AEROSPIKE_FDW
 ======================================
 
-1. Installation
+1. ```Installation```
 install aerospike server&client
 
 https://github.com/aerospike/aerospike-server.git
