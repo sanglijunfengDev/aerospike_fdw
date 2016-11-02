@@ -44,3 +44,9 @@ aerospike.as_server_ip = 'aerospike server ip'
 default PORT is 3000
 aerospike.as_server_port= aerospike server port
 shared_preload_libraries='/usr/local/psql/lib/postgresql/aerospike_fdw'
+
+
+4.Add files
+mkdir /home/pg/lua
+cp lua-core /home/pg
+chown -R postgres:postgres /home/pg
