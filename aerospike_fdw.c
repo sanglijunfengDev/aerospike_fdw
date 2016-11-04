@@ -54,6 +54,18 @@
 #include <aerospike/as_val.h>
 #include <aerospike/as_query.h>
 #include <citrusleaf/cf_queue.h>
+#include <aerospike/as_config.h>
+
+#include <aerospike/aerospike_index.h>
+#include <aerospike/aerospike_udf.h>
+#include <aerospike/as_bin.h>
+#include <aerospike/as_bytes.h>
+#include <aerospike/as_operations.h>
+#include <aerospike/as_password.h>
+#include <aerospike/as_record.h>
+#include <aerospike/as_status.h>
+#include <aerospike/as_string.h>
+
 
 #ifdef PG_MODULE_MAGIC
 PG_MODULE_MAGIC;
@@ -113,37 +125,38 @@ static bool insert_as_record(Oid foreignTableId,
 void Connect_to_aerospike_with_udf_configtmp(aerospike* p_as, char *as_server_ip,
                                              int as_server_port, const char* lua_user_path)
 {
-        as_config cfg;
-        as_error err;
-        as_config_init(&cfg);
-        as_config_add_host(&cfg, as_server_ip, as_server_port);
-	//as_config_host *host;
+	as_error err;
+	as_config config;
+	as_config_init(&config);
 
-    int rc = access(cfg.lua.system_path, R_OK);
-    if (rc != 0)
-    {
-	// Use lua files in source tree if they exist.         
-        char* path = "/home/pg/lua-core/src";
+	int rc = access(config.lua.system_path, R_OK);
+	if (rc != 0)
+	{
+		// Use lua files in source tree if they exist.         
+		char* path = "/home/pg/lua-core/src";
 
-        rc = access(path, R_OK);
+		rc = access(path, R_OK);
 
-        if (rc == 0)
-        {
-            strcpy(cfg.lua.system_path, path);
-        }
-    }
+		if (rc == 0)
+		{
+			strcpy(config.lua.system_path, path);
+		}
+	}
 
-    if (lua_user_path)
-    {
-        strcpy(cfg.lua.user_path, lua_user_path);
-    }
-	/*host = (as_config_host*)palloc0(sizeof(as_config_host));
-	host->addr = as_config_add_host;
-	host->port = as_server_port;
-	*/
-        aerospike_init(p_as, &cfg);
-	//p_as->config.hosts[0].addr = as_server_ip;
-	//p_as->config.hosts[0].port = as_server_port;
+	if (lua_user_path)
+	{
+		strcpy(config.lua.user_path, lua_user_path);
+	}
+	aerospike_init_lua(&config.lua);
+
+
+	if (! as_config_add_hosts(&config, as_server_ip, as_server_port)) {
+		printf("Invalid host(s) %s\n", as_server_ip);
+		exit(-1);
+	}
+
+	aerospike_init(p_as, &config);
+
 
         if (aerospike_connect(p_as, &err) != AEROSPIKE_OK)
         {
@@ -179,7 +192,7 @@ void _PG_init(void){
                         NULL,
                         NULL,
                         NULL);
-	elog(LOG,"--->as_server_port:%d\n",as_server_ip);
+	elog(LOG,"--->as_server_port:%d\n",as_server_port);
         Connect_to_aerospike_with_udf_configtmp(&as_ip2location, as_server_ip, as_server_port, NULL);
 
 }
@@ -807,7 +820,7 @@ Datum aerospike_fdw_validator(PG_FUNCTION_ARGS)
 		{
 			as_set = defGetString(optionDef);
 		}
-		else if (strncmp(optionName, OPTION_SET, NAMEDATALEN) == 0)
+		else if (strncmp(optionName, OPTION_KEY, NAMEDATALEN) == 0)
 		{
 			column_key = defGetString(optionDef);
 		}
@@ -1172,7 +1185,7 @@ static TupleTableSlot *AsScanNext(ForeignScanState *scanState)
 
     ExecClearTuple(tupleSlot);
 
-    cf_queue_pop(context->context, &slot, -1);
+    cf_queue_pop(context->context, &slot, CF_QUEUE_FOREVER);
 
     if (slot->tts_isempty == true)
     {
